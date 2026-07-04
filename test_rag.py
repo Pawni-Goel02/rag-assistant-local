@@ -2,8 +2,16 @@ from rag import RAG
 
 rag = RAG()
 
-results = rag.retrieve(
-    "What is positive skewness?"
+response = rag.ask(
+    "Explain positive skewness."
 )
 
-print(results)
+print("\nANSWER\n")
+
+print(response["answer"])
+
+print("\nSOURCES\n")
+
+for source in response["sources"]:
+
+    print(source)

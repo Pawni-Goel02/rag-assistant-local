@@ -1,3 +1,5 @@
+const documentList =
+    document.getElementById("document-list");
 console.log("APP JS LOADED");
 const uploadButton =
     document.getElementById("upload-btn");
@@ -45,11 +47,20 @@ uploadButton.addEventListener(
 
             const result =
                 await response.json();
+            console.log(result);
 
             if (response.ok) {
 
                 uploadStatus.innerHTML =
-                    `✅ Uploaded: ${result.filename}`;
+                    `✅ Uploaded: ${result.filename}<br>
+                    Indexed ${result.chunks} chunks`;
+
+                documentList.innerHTML = `
+                    <div class="card p-2 mt-2">
+                        📄 ${result.filename}
+                    </div>
+                `;
+
 
             } else {
 

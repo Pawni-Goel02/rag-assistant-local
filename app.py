@@ -5,12 +5,17 @@ from fastapi import Request
 from pathlib import Path
 from fastapi import UploadFile, File, HTTPException
 import shutil
+from text_extract import TextExtractor
+from chunking import TextChunker
+from embeddings import EmbeddingGenerator
+from vector_store import VectorStore
 
 app = FastAPI(title="Local RAG Assistant")
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 templates = Jinja2Templates(directory="templates")
+vector_store = VectorStore()
 
 
 @app.get("/")
@@ -38,7 +43,7 @@ async def upload_file(file: UploadFile = File(...)):
             status_code=400,
             detail="No file selected"
         )
-    
+
     extension = Path(file.filename).suffix.lower()
 
     if extension not in ALLOWED_EXTENSIONS:
@@ -48,23 +53,32 @@ async def upload_file(file: UploadFile = File(...)):
         )
 
     save_path = UPLOAD_DIR / file.filename
+    print(save_path)
 
-    try:
+    # Save the uploaded file first
+    with open(save_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
 
-        with open(save_path, "wb") as buffer:
-            shutil.copyfileobj(
-                file.file,
-                buffer
-            )
+    # Now process it
+    pages = TextExtractor.extract(save_path)
 
-        return {
-            "success": True,
-            "filename": file.filename
-        }
+    chunks = TextChunker.chunk_pages(pages)
 
-    except Exception as e:
+    embeddings = [
+        EmbeddingGenerator.generate(chunk["text"])
+        for chunk in chunks
+    ]
+    print(f"Pages: {len(pages)}")
+    print(f"Chunks: {len(chunks)}")
+    print(f"Embeddings: {len(embeddings)}")
 
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        )
+    vector_store.add_chunks(
+        chunks,
+        embeddings
+    )
+
+    return {
+        "success": True,
+        "filename": file.filename,
+        "chunks": len(chunks)
+    }
