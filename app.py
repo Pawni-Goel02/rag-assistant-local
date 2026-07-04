@@ -5,17 +5,14 @@ from fastapi import Request
 from pathlib import Path
 from fastapi import UploadFile, File, HTTPException
 import shutil
-from text_extract import TextExtractor
-from chunking import TextChunker
-from embeddings import EmbeddingGenerator
-from vector_store import VectorStore
+from rag import RAG
 
 app = FastAPI(title="Local RAG Assistant")
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 templates = Jinja2Templates(directory="templates")
-vector_store = VectorStore()
+rag = RAG()
 
 
 @app.get("/")
@@ -60,25 +57,10 @@ async def upload_file(file: UploadFile = File(...)):
         shutil.copyfileobj(file.file, buffer)
 
     # Now process it
-    pages = TextExtractor.extract(save_path)
-
-    chunks = TextChunker.chunk_pages(pages)
-
-    embeddings = [
-        EmbeddingGenerator.generate(chunk["text"])
-        for chunk in chunks
-    ]
-    print(f"Pages: {len(pages)}")
-    print(f"Chunks: {len(chunks)}")
-    print(f"Embeddings: {len(embeddings)}")
-
-    vector_store.add_chunks(
-        chunks,
-        embeddings
-    )
+    chunk_count = rag.index_document(save_path)
 
     return {
         "success": True,
         "filename": file.filename,
-        "chunks": len(chunks)
+        "chunks": chunk_count
     }
