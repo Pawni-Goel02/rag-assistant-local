@@ -64,3 +64,17 @@ async def upload_file(file: UploadFile = File(...)):
         "filename": file.filename,
         "chunks": chunk_count
     }
+
+from pydantic import BaseModel
+
+class ChatRequest(BaseModel):
+    question:str
+
+@app.post("/chat")
+async def chat(request:ChatRequest):
+
+    result = rag.ask(
+        request.question
+    )
+
+    return result
