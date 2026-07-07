@@ -1,3 +1,12 @@
+const sendButton =
+    document.getElementById("send-btn");
+
+const messageInput =
+    document.getElementById("message-input");
+
+const chatWindow =
+    document.getElementById("chat-window");
+
 const documentList =
     document.getElementById("document-list");
 console.log("APP JS LOADED");
@@ -47,7 +56,7 @@ uploadButton.addEventListener(
 
             const result =
                 await response.json();
-            console.log(result);
+
 
             if (response.ok) {
 
@@ -73,5 +82,50 @@ uploadButton.addEventListener(
             uploadStatus.innerHTML =
                 "Upload failed";
         }
+    }
+);
+
+sendButton.addEventListener(
+    "click",
+    async () => {
+
+        const question = messageInput.value.trim();
+
+        if (!question) {
+            return;
+        }
+
+        chatWindow.innerHTML += `
+            <div class="user-message">
+                <strong>You:</strong><br>
+                ${question}
+            </div>
+        `;
+
+        const response = await fetch(
+            "/chat",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    question: question
+                })
+            }
+        );
+
+        const result = await response.json();
+
+        chatWindow.innerHTML += `
+            <div class="assistant-message">
+                <strong>Assistant:</strong><br>
+                ${result.answer}
+            </div>
+        `;
+
+        messageInput.value = "";
+
+        chatWindow.scrollTop = chatWindow.scrollHeight;
     }
 );
