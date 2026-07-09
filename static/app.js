@@ -133,6 +133,8 @@ assistantDiv.innerHTML =
 
 chatWindow.appendChild(assistantDiv);
 
+let buffer = "";
+
 while (true) {
 
     const { done, value } =
@@ -140,8 +142,45 @@ while (true) {
 
     if (done) break;
 
-    assistantDiv.innerHTML +=
-        decoder.decode(value);
+    buffer += decoder.decode(value);
+
+    const events = buffer.split("\n\n");
+
+    buffer = events.pop();
+
+    for (const event of events) {
+
+        if (!event.startsWith("data: "))
+            continue;
+
+        const json =
+            JSON.parse(
+                event.replace("data: ", "")
+            );
+
+        if (json.type === "token") {
+
+            assistantDiv.innerHTML +=
+                json.data;
+
+        }
+
+        if (json.type === "sources") {
+
+            assistantDiv.innerHTML +=
+                "<br><br><b>📄 Sources</b><br>";
+
+            json.data.forEach(source => {
+
+                assistantDiv.innerHTML +=
+                    `${source.source} (Page ${source.page})<br>`;
+
+            });
+
+        }
+
+    }
+
 }
 
         messageInput.value = "";

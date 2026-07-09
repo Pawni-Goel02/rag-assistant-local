@@ -35,4 +35,8 @@ class LLM:
         )
 
         for chunk in stream:
-            yield chunk["message"]["content"]
+
+            token = chunk["message"]["content"]
+
+            if token.strip():
+                yield token

@@ -10,6 +10,24 @@ class RAG:
     def __init__(self):
         self.store = VectorStore()
 
+    def _unique_sources(self, metadatas):
+
+        seen = set()
+        unique = []
+
+        for source in metadatas:
+
+            key = (
+                source["source"],
+                source["page"]
+            )
+
+            if key not in seen:
+                seen.add(key)
+                unique.append(source)
+
+        return unique
+
     def index_document(self, file_path):
 
         pages = TextExtractor.extract(file_path)
@@ -37,6 +55,10 @@ class RAG:
             k
         )
 
+        unique_sources = self._unique_sources(
+            results["metadatas"][0]
+        )
+
         context = "\n\n".join(
             results["documents"][0]
         )
@@ -46,8 +68,7 @@ You are a helpful AI assistant.
 
 Answer ONLY using the context below.
 
-If the answer is not present in the context,
-say:
+If the answer is not present in the context, say:
 
 "I couldn't find that information in the uploaded documents."
 
@@ -64,9 +85,9 @@ Question:
 
         return {
             "answer": answer,
-            "sources": results["metadatas"][0]
+            "sources": unique_sources
         }
-    
+
     def stream(self, question, k=3):
 
         embedding = EmbeddingGenerator.generate(question)
@@ -76,27 +97,41 @@ Question:
             k
         )
 
+        unique_sources = self._unique_sources(
+            results["metadatas"][0]
+        )
+
         context = "\n\n".join(
             results["documents"][0]
         )
 
         prompt = f"""
-    You are a helpful AI assistant.
+You are a helpful AI assistant.
 
-    Answer ONLY using the context below.
+Answer ONLY using the context below.
 
-    If the answer is not present in the context,
-    say:
+If the answer is not present in the context, say:
 
-    "I couldn't find that information in the uploaded documents."
+"I couldn't find that information in the uploaded documents."
 
-    Context:
+Context:
 
-    {context}
+{context}
 
-    Question:
+Question:
 
-    {question}
-    """
+{question}
+"""
 
-        return LLM.stream(prompt)
+        for token in LLM.stream(prompt):
+
+            if token.strip():
+                yield {
+                    "type": "token",
+                    "data": token
+                }
+
+        yield {
+            "type": "sources",
+            "data": unique_sources
+        }

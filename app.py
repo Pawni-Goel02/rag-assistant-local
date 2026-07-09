@@ -7,6 +7,7 @@ from fastapi import UploadFile, File, HTTPException
 import shutil
 from rag import RAG
 from fastapi.responses import StreamingResponse
+import json
 
 app = FastAPI(title="Local RAG Assistant")
 
@@ -74,7 +75,13 @@ class ChatRequest(BaseModel):
 @app.post("/chat")
 async def chat(request: ChatRequest):
 
+    def event_generator():
+
+        for item in rag.stream(request.question):
+
+            yield f"data: {json.dumps(item)}\n\n"
+
     return StreamingResponse(
-        rag.stream(request.question),
-        media_type="text/plain"
+        event_generator(),
+        media_type="text/event-stream"
     )
