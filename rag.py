@@ -66,3 +66,37 @@ Question:
             "answer": answer,
             "sources": results["metadatas"][0]
         }
+    
+    def stream(self, question, k=3):
+
+        embedding = EmbeddingGenerator.generate(question)
+
+        results = self.store.search(
+            embedding,
+            k
+        )
+
+        context = "\n\n".join(
+            results["documents"][0]
+        )
+
+        prompt = f"""
+    You are a helpful AI assistant.
+
+    Answer ONLY using the context below.
+
+    If the answer is not present in the context,
+    say:
+
+    "I couldn't find that information in the uploaded documents."
+
+    Context:
+
+    {context}
+
+    Question:
+
+    {question}
+    """
+
+        return LLM.stream(prompt)

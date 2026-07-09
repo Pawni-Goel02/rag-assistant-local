@@ -6,6 +6,7 @@ from pathlib import Path
 from fastapi import UploadFile, File, HTTPException
 import shutil
 from rag import RAG
+from fastapi.responses import StreamingResponse
 
 app = FastAPI(title="Local RAG Assistant")
 
@@ -71,10 +72,9 @@ class ChatRequest(BaseModel):
     question:str
 
 @app.post("/chat")
-async def chat(request:ChatRequest):
+async def chat(request: ChatRequest):
 
-    result = rag.ask(
-        request.question
+    return StreamingResponse(
+        rag.stream(request.question),
+        media_type="text/plain"
     )
-
-    return result

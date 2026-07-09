@@ -54,8 +54,13 @@ uploadButton.addEventListener(
                     }
                 );
 
-            const result =
-                await response.json();
+if (!response.ok) {
+    const error = await response.text();
+    console.error(error);
+    return;
+}
+
+const result = await response.json();
 
 
             if (response.ok) {
@@ -115,14 +120,29 @@ sendButton.addEventListener(
             }
         );
 
-        const result = await response.json();
+        const reader = response.body.getReader();
 
-        chatWindow.innerHTML += `
-            <div class="assistant-message">
-                <strong>Assistant:</strong><br>
-                ${result.answer}
-            </div>
-        `;
+const decoder = new TextDecoder();
+
+let assistantDiv = document.createElement("div");
+
+assistantDiv.className = "assistant-message";
+
+assistantDiv.innerHTML =
+    "<strong>Assistant:</strong><br>";
+
+chatWindow.appendChild(assistantDiv);
+
+while (true) {
+
+    const { done, value } =
+        await reader.read();
+
+    if (done) break;
+
+    assistantDiv.innerHTML +=
+        decoder.decode(value);
+}
 
         messageInput.value = "";
 

@@ -19,3 +19,20 @@ class LLM:
         )
 
         return response["message"]["content"]
+
+    @staticmethod
+    def stream(prompt: str):
+
+        stream = chat(
+            model=LLM.MODEL,
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            stream=True
+        )
+
+        for chunk in stream:
+            yield chunk["message"]["content"]
