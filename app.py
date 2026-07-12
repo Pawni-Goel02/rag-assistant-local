@@ -8,6 +8,7 @@ import shutil
 from rag import RAG
 from fastapi.responses import StreamingResponse
 import json
+import os
 
 app = FastAPI(title="Local RAG Assistant")
 
@@ -61,6 +62,12 @@ async def upload_file(file: UploadFile = File(...)):
     # Now process it
     chunk_count = rag.index_document(save_path)
 
+    if chunk_count == 0:
+        raise HTTPException(
+            status_code=400,
+            detail="No extractable text found in this file. It may be a scanned/image-only document."
+        )
+
     return {
         "success": True,
         "filename": file.filename,
@@ -85,3 +92,33 @@ async def chat(request: ChatRequest):
         event_generator(),
         media_type="text/event-stream"
     )
+
+@app.post("/chat/reset")
+async def reset_chat():
+
+    rag.memory.clear()
+
+    return {
+        "success": True
+    }
+
+@app.post("/documents/clear")
+async def clear_documents():
+
+    rag.clear_documents()
+
+    for file in UPLOAD_DIR.iterdir():
+
+        if file.is_file():
+            file.unlink()
+
+    return {
+        "success": True
+    }
+
+@app.get("/documents")
+async def documents():
+
+    return {
+        "documents": rag.list_documents()
+    }

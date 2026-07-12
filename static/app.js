@@ -19,7 +19,11 @@ const fileInput =
 const uploadStatus =
     document.getElementById("upload-status");
 
+const newChatButton =
+    document.getElementById("new-chat-btn");
 
+const clearDocsButton =
+    document.getElementById("clear-docs-btn");
 uploadButton.addEventListener(
     "click",
     async () => {
@@ -188,3 +192,73 @@ while (true) {
         chatWindow.scrollTop = chatWindow.scrollHeight;
     }
 );
+
+newChatButton.addEventListener(
+    "click",
+    async () => {
+
+        await fetch(
+            "/chat/reset",
+            {
+                method: "POST"
+            }
+        );
+
+        chatWindow.innerHTML = `
+            <div class="assistant-message">
+                Hello! Upload documents and ask questions.
+            </div>
+        `;
+
+    }
+);
+
+clearDocsButton.addEventListener(
+    "click",
+    async () => {
+
+        await fetch(
+            "/documents/clear",
+            {
+                method: "POST"
+            }
+        );
+
+        documentList.innerHTML =
+            "No documents yet";
+
+        uploadStatus.innerHTML = "";
+
+        fileInput.value = "";
+
+    }
+);
+
+async function loadDocuments() {
+
+    const response = await fetch("/documents");
+
+    const result = await response.json();
+
+    if (result.documents.length === 0) {
+
+        documentList.innerHTML =
+            "No documents yet";
+
+        return;
+    }
+
+    documentList.innerHTML = "";
+
+    result.documents.forEach(doc => {
+
+        documentList.innerHTML += `
+            <div class="card p-2 mt-2">
+                📄 ${doc}
+            </div>
+        `;
+
+    });
+
+}
+loadDocuments();

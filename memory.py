@@ -29,3 +29,6 @@ class Memory:
     def clear(self):
 
         self.messages.clear()
+    
+    def clear(self):
+        self.messages = []

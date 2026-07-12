@@ -17,7 +17,7 @@ class VectorStore:
     def add_chunks(self, chunks, embeddings):
 
         ids = [
-            str(chunk["id"])
+            f'{chunk["source"]}_{chunk["id"]}'
             for chunk in chunks
         ]
 
@@ -51,3 +51,34 @@ class VectorStore:
             query_embeddings=[query_embedding],
             n_results=k
         )
+    
+    def clear(self):
+
+        self.client.delete_collection(
+            "documents"
+        )
+
+        self.collection = self.client.get_or_create_collection(
+            name="documents"
+        )
+
+    def list_documents(self):
+
+        data = self.collection.get(
+            include=["metadatas"],
+            limit=self.collection.count()
+        )
+
+        seen = set()
+        documents = []
+
+        for metadata in data["metadatas"]:
+
+            source = metadata["source"]
+
+            if source not in seen:
+
+                seen.add(source)
+                documents.append(source)
+
+        return documents
