@@ -6,31 +6,22 @@ class LLM:
     MODEL = "qwen3:8b"
 
     @staticmethod
-    def ask(prompt: str):
+    def ask(messages):
 
         response = chat(
             model=LLM.MODEL,
-            messages=[
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ]
+            messages=messages
         )
 
         return response["message"]["content"]
+    
 
     @staticmethod
-    def stream(prompt: str):
+    def stream(messages):
 
         stream = chat(
             model=LLM.MODEL,
-            messages=[
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
+            messages=messages,
             stream=True
         )
 
