@@ -10,6 +10,11 @@ from fastapi.responses import StreamingResponse
 import json
 import os
 
+from pydantic import BaseModel
+
+class URLRequest(BaseModel):
+    url: str
+
 app = FastAPI(title="Local RAG Assistant")
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -121,4 +126,17 @@ async def documents():
 
     return {
         "documents": rag.list_documents()
+    }
+
+@app.post("/upload-url")
+async def upload_url(request: URLRequest):
+
+    chunks = rag.index_url(
+        request.url
+    )
+
+    return {
+        "success": True,
+        "url": request.url,
+        "chunks": chunks
     }

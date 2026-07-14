@@ -262,3 +262,54 @@ async function loadDocuments() {
 
 }
 loadDocuments();
+
+const urlButton =
+    document.getElementById("url-btn");
+
+const urlInput =
+    document.getElementById("url-input");
+
+urlButton.addEventListener(
+    "click",
+    async () => {
+
+        const url =
+            urlInput.value.trim();
+
+        if (!url)
+            return;
+
+        const response =
+            await fetch(
+                "/upload-url",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type":
+                        "application/json"
+                    },
+                    body: JSON.stringify({
+                        url
+                    })
+                }
+            );
+
+        const result =
+            await response.json();
+
+        if (response.ok) {
+
+            uploadStatus.innerHTML =
+                `✅ Indexed URL<br>
+                ${result.chunks} chunks`;
+
+            loadDocuments();
+
+        } else {
+
+            uploadStatus.innerHTML =
+                "Failed";
+        }
+
+    }
+);

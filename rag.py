@@ -1,5 +1,5 @@
 import textwrap
-
+from url_extract import URLExtractor
 from text_extract import TextExtractor
 from chunking import TextChunker
 from embeddings import EmbeddingGenerator
@@ -348,3 +348,23 @@ class RAG:
 
     def list_documents(self):
         return self.store.list_documents()
+    
+    def index_url(self, url):
+
+        pages = URLExtractor.extract(url)
+
+        chunks = TextChunker.chunk_pages(pages)
+
+        embeddings = [
+            EmbeddingGenerator.generate(
+                chunk["text"]
+            )
+            for chunk in chunks
+        ]
+
+        self.store.add_chunks(
+            chunks,
+            embeddings
+        )
+
+        return len(chunks)
