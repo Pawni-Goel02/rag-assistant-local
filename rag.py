@@ -6,6 +6,7 @@ from embeddings import EmbeddingGenerator
 from vector_store import VectorStore
 from llm import LLM
 from memory import Memory
+import re
 
 
 class RAG:
@@ -88,6 +89,7 @@ class RAG:
             " they ",
             " compare "
         ]
+        words = re.findall(r"\b\w+\b", question_lower)
 
         if not any(word in f" {question_lower} " for word in pronouns):
             return question
