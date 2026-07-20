@@ -47,6 +47,13 @@ uploadButton.addEventListener(
             file
         );
 
+        uploadButton.disabled = true;
+        const originalButtonText = uploadButton.textContent;
+        uploadButton.textContent = "Uploading...";
+
+        uploadStatus.innerHTML =
+            `<span class="spinner"></span> Uploading & indexing "${file.name}"...`;
+
         try {
 
             const response =
@@ -61,6 +68,7 @@ uploadButton.addEventListener(
 if (!response.ok) {
     const error = await response.text();
     console.error(error);
+    uploadStatus.innerHTML = "❌ Upload failed";
     return;
 }
 
@@ -89,7 +97,11 @@ const result = await response.json();
         } catch (error) {
 
             uploadStatus.innerHTML =
-                "Upload failed";
+                "❌ Upload failed";
+        } finally {
+
+            uploadButton.disabled = false;
+            uploadButton.textContent = originalButtonText;
         }
     }
 );
@@ -111,18 +123,39 @@ sendButton.addEventListener(
             </div>
         `;
 
-        const response = await fetch(
-            "/chat",
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    question: question
-                })
-            }
-        );
+        messageInput.value = "";
+        sendButton.disabled = true;
+
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+
+        let response;
+
+        try {
+
+            response = await fetch(
+                "/chat",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        question: question
+                    })
+                }
+            );
+
+        } catch (error) {
+
+            chatWindow.innerHTML += `
+                <div class="assistant-message">
+                    ❌ Could not reach the server. Please try again.
+                </div>
+            `;
+
+            sendButton.disabled = false;
+            return;
+        }
 
         const reader = response.body.getReader();
 
@@ -133,11 +166,14 @@ let assistantDiv = document.createElement("div");
 assistantDiv.className = "assistant-message";
 
 assistantDiv.innerHTML =
-    "<strong>Assistant:</strong><br>";
+    `<strong>Assistant:</strong><br><span class="typing-indicator"><span></span><span></span><span></span></span>`;
 
 chatWindow.appendChild(assistantDiv);
 
+chatWindow.scrollTop = chatWindow.scrollHeight;
+
 let buffer = "";
+let receivedFirstToken = false;
 
 while (true) {
 
@@ -164,6 +200,15 @@ while (true) {
 
         if (json.type === "token") {
 
+            if (!receivedFirstToken) {
+
+                // First token arrived - clear the typing indicator
+                assistantDiv.innerHTML =
+                    "<strong>Assistant:</strong><br>";
+
+                receivedFirstToken = true;
+            }
+
             assistantDiv.innerHTML +=
                 json.data;
 
@@ -185,9 +230,11 @@ while (true) {
 
     }
 
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+
 }
 
-        messageInput.value = "";
+        sendButton.disabled = false;
 
         chatWindow.scrollTop = chatWindow.scrollHeight;
     }
@@ -279,36 +326,56 @@ urlButton.addEventListener(
         if (!url)
             return;
 
-        const response =
-            await fetch(
-                "/upload-url",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type":
-                        "application/json"
-                    },
-                    body: JSON.stringify({
-                        url
-                    })
-                }
-            );
+        urlButton.disabled = true;
+        const originalButtonText = urlButton.textContent;
+        urlButton.textContent = "Indexing...";
 
-        const result =
-            await response.json();
+        uploadStatus.innerHTML =
+            `<span class="spinner"></span> Fetching & indexing URL...`;
 
-        if (response.ok) {
+        try {
+
+            const response =
+                await fetch(
+                    "/upload-url",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type":
+                            "application/json"
+                        },
+                        body: JSON.stringify({
+                            url
+                        })
+                    }
+                );
+
+            const result =
+                await response.json();
+
+            if (response.ok) {
+
+                uploadStatus.innerHTML =
+                    `✅ Indexed URL<br>
+                    ${result.chunks} chunks`;
+
+                loadDocuments();
+
+            } else {
+
+                uploadStatus.innerHTML =
+                    `❌ ${result.detail || "Failed"}`;
+            }
+
+        } catch (error) {
 
             uploadStatus.innerHTML =
-                `✅ Indexed URL<br>
-                ${result.chunks} chunks`;
+                "❌ Failed to index URL";
 
-            loadDocuments();
+        } finally {
 
-        } else {
-
-            uploadStatus.innerHTML =
-                "Failed";
+            urlButton.disabled = false;
+            urlButton.textContent = originalButtonText;
         }
 
     }
